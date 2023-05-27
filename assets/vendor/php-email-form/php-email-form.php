@@ -87,26 +87,3 @@ class PHP_Email_Form
         $this->ajax = true;
     }
 }
-
-// Include the PHP_Email_Form class
-include('php-email-form.php');
-
-$receiving_email_address = 'asutoshbehera666@gmail.com';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $contact = new PHP_Email_Form();
-    $contact->setTo($receiving_email_address);
-    $contact->setFromName($_POST['name']);
-    $contact->setFromEmail($_POST['email']);
-    $contact->setSubject($_POST['subject']);
-    $contact->add_message($_POST['name'], 'From');
-    $contact->add_message($_POST['email'], 'Email');
-    $contact->add_message($_POST['message'], 'Message', 10);
-
-    if ($contact->send()) {
-        echo json_encode(array('status' => 'success', 'message' => 'Your message has been sent. Thank you!'));
-    } else {
-        echo json_encode(array('status' => 'error', 'message' => 'Failed to send message. Please try again.'));
-    }
-    exit;
-}
