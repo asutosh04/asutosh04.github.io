@@ -1,33 +1,30 @@
 <?php
-  // Replace contact@example.com with your real receiving email address
-  $receiving_email_address = 'asutoshbehera666@gmail.com';
 
-  if (file_exists($php_email_form = '../assets/vendor/php-email-form/php-email-form.php')) {
-    include($php_email_form);
-  } else {
-    die('Unable to load the "PHP Email Form" Library!');
-  }
+// Replace contact@example.com with your real receiving email address
+$receiving_email_address = 'asutoshbehera666@gmail.com';
 
-  $contact = new PHP_Email_Form();
-  $contact->enableAjax();
-  $contact->setTo($receiving_email_address);
-  $contact->setFromName($_POST['name']);
-  $contact->setFromEmail($_POST['email']);
-  $contact->setSubject($_POST['subject']);
+// Include the PHP_Email_Form class
+include('php-email-form.php');
 
-  // Uncomment below code if you want to use SMTP to send emails. You need to enter your correct SMTP credentials
-  /*
-  $contact->smtp = array(
-    'host' => 'example.com',
-    'username' => 'example',
-    'password' => 'pass',
-    'port' => '587'
-  );
-  */
+// Create a new PHP_Email_Form object
+$contact = new PHP_Email_Form;
 
-  $contact->add_message($_POST['name'], 'From');
-  $contact->add_message($_POST['email'], 'Email');
-  $contact->add_message($_POST['message'], 'Message', 10);
+// Set the form data
+$contact->set_to($receiving_email_address);
+$contact->set_from_name($_POST['name']);
+$contact->set_from_email($_POST['email']);
+$contact->set_subject($_POST['subject']);
 
-  echo $contact->send();
+// Add the messages from the form
+$contact->add_message($_POST['name'], 'From');
+$contact->add_message($_POST['email'], 'Email');
+$contact->add_message($_POST['message'], 'Message', 10);
+
+// Send the email
+if ($contact->send()) {
+  echo 'Your message has been sent. Thank you!';
+} else {
+  echo 'There was an error sending your message. Please try again later.';
+}
+
 ?>

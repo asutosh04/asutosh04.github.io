@@ -2,88 +2,130 @@
 
 class PHP_Email_Form
 {
+
+    private $ajax = false;
     private $to;
     private $from_name;
     private $from_email;
     private $subject;
-    private $message;
-    private $headers;
-    private $ajax = false;
+    private $messages = array();
+    private $message_body = '';
+    private $errors = array();
 
     public function __construct()
     {
-        $this->headers = "MIME-Version: 1.0" . "\r\n";
-        $this->headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+        $this->ajax = false;
     }
 
-    public function send()
+    public function set_ajax($ajax)
     {
-        $this->message = wordwrap($this->message, 70);
-
-        if ($this->ajax) {
-            $response = array('status' => 'error', 'message' => '');
-
-            if ($this->validate()) {
-                $mail = mail($this->to, $this->subject, $this->message, $this->headers);
-                if ($mail) {
-                    $response['status'] = 'success';
-                    $response['message'] = 'Message sent successfully';
-                } else {
-                    $response['message'] = 'Failed to send message';
-                }
-            } else {
-                $response['message'] = 'Please fill in all required fields';
-            }
-
-            return json_encode($response);
-        } else {
-            if ($this->validate()) {
-                return mail($this->to, $this->subject, $this->message, $this->headers);
-            } else {
-                return false;
-            }
-        }
+        $this->ajax = $ajax;
     }
 
-    public function add_message($content, $label, $maxlength = 0)
-    {
-        $content = htmlspecialchars(stripslashes(trim($content)));
-        $label = ucfirst($label);
-
-        if ($maxlength > 0 && strlen($content) > $maxlength) {
-            $content = substr($content, 0, $maxlength);
-        }
-
-        $this->message .= "<p><strong>$label:</strong> $content</p>";
-    }
-
-    private function validate()
-    {
-        return !empty($this->to) && !empty($this->from_name) && !empty($this->from_email) && !empty($this->subject) && !empty($this->message);
-    }
-
-    public function setTo($to)
+    public function set_to($to)
     {
         $this->to = $to;
     }
 
-    public function setFromName($name)
+    public function set_from_name($from_name)
     {
-        $this->from_name = $name;
+        $this->from_name = $from_name;
     }
 
-    public function setFromEmail($email)
+    public function set_from_email($from_email)
     {
-        $this->from_email = $email;
+        $this->from_email = $from_email;
     }
 
-    public function setSubject($subject)
+    public function set_subject($subject)
     {
         $this->subject = $subject;
     }
 
-    public function enableAjax()
+    public function add_message($message, $label = null, $maxlength = null)
     {
-        $this->ajax = true;
+        $this->messages[] = array(
+            'message' => $message,
+            'label' => $label,
+            'maxlength' => $maxlength
+        );
+    }
+
+    public function send()
+    {
+        if ($this->ajax) {
+            // Send the email using AJAX
+            $response = array(
+                'success' => false,
+                'message' => ''
+            );
+
+            if ($this->validate()) {
+                $this->send_email();
+                $response['success'] = true;
+                $response['message'] = 'Your message has been sent. Thank you!';
+            } else {
+                $response['message'] = 'Please correct the following errors:';
+
+                foreach ($this->errors as $error) {
+                    $response['message'] .= "<br>$error";
+                }
+            }
+
+            echo json_encode($response);
+        } else {
+            // Send the email using the regular method
+            if ($this->validate()) {
+                $this->send_email();
+                header("Location: contact.php?success=true");
+            } else {
+                include('contact.php');
+            }
+        }
+    }
+
+    private function validate()
+    {
+        $errors = array();
+
+        if (empty($this->to)) {
+            $errors[] = 'Please enter a recipient email address.';
+        }
+
+        if (empty($this->from_name)) {
+            $errors[] = 'Please enter your name.';
+        }
+
+        if (empty($this->from_email)) {
+            $errors[] = 'Please enter your email address.';
+        }
+
+        if (empty($this->subject)) {
+            $errors[] = 'Please enter a subject line.';
+        }
+
+        foreach ($this->messages as $message) {
+            if (empty($message['message'])) {
+                $errors[] = 'Please enter a message.';
+            }
+        }
+
+        $this->errors = $errors;
+
+        return count($errors) == 0;
+    }
+
+    private function send_email()
+    {
+        $headers = array(
+            'From: ' . $this->from_name . ' <' . $this->from_email . '>',
+            'Subject: ' . $this->subject
+        );
+
+        foreach ($this->messages as $message) {
+            $this->message_body .= $message['message'] . "\n";
+        }
+
+        mail($this->to, $this->subject, $this->message_body, $headers);
     }
 }
